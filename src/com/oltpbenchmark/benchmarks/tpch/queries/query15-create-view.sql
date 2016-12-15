@@ -6,6 +6,6 @@ create view revenue0 (supplier_no, total_revenue) as
 		lineitem
 	where
 		l_shipdate >= date '1997-03-01'
-		and l_shipdate < date '1997-03-01' + interval '3' month
+		and l_shipdate < ((date '1997-03-01')::timestamp + interval '3 month')::date
 	group by
 		l_suppkey;

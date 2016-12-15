@@ -4,6 +4,6 @@ from
 	lineitem
 where
 	l_shipdate >= date '1997-01-01'
-	and l_shipdate < date '1997-01-01' + interval '1' year
+	and l_shipdate < ((date '1997-01-01')::timestamp + interval '1 year')::date
 	and l_discount between 0.07 - 0.01 and 0.07 + 0.01
 	and l_quantity < 24;
