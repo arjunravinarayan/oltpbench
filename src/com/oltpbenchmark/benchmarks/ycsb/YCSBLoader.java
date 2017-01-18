@@ -81,8 +81,7 @@ public class YCSBLoader extends Loader<YCSBBenchmark> {
                 assert (result != null);
                 conn.commit();
                 batch = 0;
-                if (LOG.isDebugEnabled())
-                    LOG.debug(String.format("Records Loaded %d / %d", total, this.num_record));
+                System.out.println(String.format("Records Loaded %d / %d", total, this.num_record));
             }
         } // FOR
         if (batch > 0) {
