@@ -66,27 +66,27 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
             numWarehouses = 1;
         }
     }
-    
+
     static boolean fastLoad;
     static String fastLoaderBaseDir;
 
     private int numWarehouses = 0;
     private static final int FIRST_UNPROCESSED_O_ID = 2101;
-    
+
     @Override
     public List<LoaderThread> createLoaderTheads() throws SQLException {
         List<LoaderThread> threads = new ArrayList<LoaderThread>();
         final CountDownLatch itemLatch = new CountDownLatch(1);
-        
+
         // ITEM Table
         threads.add(new LoaderThread() {
             @Override
             public void load(Connection conn) throws SQLException {
                 loadItems(conn, TPCCConfig.configItemCount);
-                itemLatch.countDown();                
+                itemLatch.countDown();
             }
         });
-        
+
         // WAREHOUSES
         for (int w = 1; w <= numWarehouses; w++) {
             final int w_id = w;
@@ -102,21 +102,21 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
                         ex.printStackTrace();
                         throw new RuntimeException(ex);
                     }
-                    
+
                     if (LOG.isDebugEnabled()) LOG.debug("Starting to load WAREHOUSE " + w_id);
-                    
+
                     // WAREHOUSE
                     loadWarehouse(conn, w_id);
-                    
+
                     // STOCK
                     loadStock(conn, w_id, TPCCConfig.configItemCount);
-                    
+
                     // DISTRICT
                     loadDistricts(conn, w_id, TPCCConfig.configDistPerWhse);
-                    
+
                     // CUSTOMER
                     loadCustomers(conn, w_id, TPCCConfig.configDistPerWhse, TPCCConfig.configCustPerDist);
-                    
+
                     // ORDERS
                     loadOrders(conn, w_id, TPCCConfig.configDistPerWhse, TPCCConfig.configCustPerDist);
                 }
@@ -125,7 +125,7 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
         } // FOR
         return (threads);
     }
-    
+
     private PreparedStatement getInsertStatement(Connection conn, String tableName) throws SQLException {
         Table catalog_tbl = this.benchmark.getTableCatalog(tableName);
         assert(catalog_tbl != null);
@@ -157,7 +157,7 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
         int len = 0;
         int startORIGINAL = 0;
         boolean fail = false;
-        
+
         try {
             PreparedStatement itemPrepStmt = getInsertStatement(conn, TPCCConstants.TABLENAME_ITEM);
 
@@ -192,7 +192,7 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
                 int idx = 1;
                 itemPrepStmt.setLong(idx++, item.i_id);
                 itemPrepStmt.setString(idx++, item.i_name);
-                itemPrepStmt.setDouble(idx++, item.i_price);
+                itemPrepStmt.setBigDecimal(idx++, new java.math.BigDecimal(item.i_price));
                 itemPrepStmt.setString(idx++, item.i_data);
                 itemPrepStmt.setLong(idx++, item.i_im_id);
                 itemPrepStmt.addBatch();
@@ -226,7 +226,7 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
         } finally {
             if (fail) {
                 LOG.debug("Rolling back changes from last batch");
-                transRollback(conn);    
+                transRollback(conn);
             }
         }
 
@@ -249,13 +249,13 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 			warehouse.w_street_1 = TPCCUtil.randomStr(TPCCUtil.randomNumber(10, 20, benchmark.rng()));
 			warehouse.w_street_2 = TPCCUtil.randomStr(TPCCUtil.randomNumber(10, 20, benchmark.rng()));
 			warehouse.w_city = TPCCUtil.randomStr(TPCCUtil.randomNumber(10, 20, benchmark.rng()));
-			warehouse.w_state = TPCCUtil.randomStr(3).toUpperCase(); 
+			warehouse.w_state = TPCCUtil.randomStr(3).toUpperCase();
 			warehouse.w_zip = "123456789";
 
 			int idx = 1;
 			whsePrepStmt.setLong(idx++, warehouse.w_id);
-			whsePrepStmt.setDouble(idx++, warehouse.w_ytd);
-			whsePrepStmt.setDouble(idx++, warehouse.w_tax);
+			whsePrepStmt.setBigDecimal(idx++, new java.math.BigDecimal(warehouse.w_ytd));
+			whsePrepStmt.setBigDecimal(idx++, new java.math.BigDecimal(warehouse.w_tax));
 			whsePrepStmt.setString(idx++, warehouse.w_name);
 			whsePrepStmt.setString(idx++, warehouse.w_street_1);
 			whsePrepStmt.setString(idx++, warehouse.w_street_2);
@@ -327,8 +327,8 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 				int idx = 1;
 				stckPrepStmt.setLong(idx++, stock.s_w_id);
 				stckPrepStmt.setLong(idx++, stock.s_i_id);
-				stckPrepStmt.setLong(idx++, stock.s_quantity);
-				stckPrepStmt.setDouble(idx++, stock.s_ytd);
+				stckPrepStmt.setBigDecimal(idx++, new java.math.BigDecimal(stock.s_quantity));
+				stckPrepStmt.setBigDecimal(idx++, new java.math.BigDecimal(stock.s_ytd));
 				stckPrepStmt.setLong(idx++, stock.s_order_cnt);
 				stckPrepStmt.setLong(idx++, stock.s_remote_cnt);
 				stckPrepStmt.setString(idx++, stock.s_data);
@@ -395,8 +395,8 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 				int idx = 1;
 				distPrepStmt.setLong(idx++, district.d_w_id);
 				distPrepStmt.setLong(idx++, district.d_id);
-				distPrepStmt.setDouble(idx++, district.d_ytd);
-				distPrepStmt.setDouble(idx++, district.d_tax);
+				distPrepStmt.setBigDecimal(idx++, new java.math.BigDecimal(district.d_ytd));
+				distPrepStmt.setBigDecimal(idx++, new java.math.BigDecimal(district.d_tax));
 				distPrepStmt.setLong(idx++, district.d_next_o_id);
 				distPrepStmt.setString(idx++, district.d_name);
 				distPrepStmt.setString(idx++, district.d_street_1);
@@ -487,12 +487,12 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 					custPrepStmt.setLong(idx++, customer.c_w_id);
 					custPrepStmt.setLong(idx++, customer.c_d_id);
 					custPrepStmt.setLong(idx++, customer.c_id);
-					custPrepStmt.setDouble(idx++, customer.c_discount);
+					custPrepStmt.setBigDecimal(idx++, new java.math.BigDecimal(customer.c_discount));
 					custPrepStmt.setString(idx++, customer.c_credit);
 					custPrepStmt.setString(idx++, customer.c_last);
 					custPrepStmt.setString(idx++, customer.c_first);
-					custPrepStmt.setDouble(idx++, customer.c_credit_lim);
-					custPrepStmt.setDouble(idx++, customer.c_balance);
+					custPrepStmt.setBigDecimal(idx++, new java.math.BigDecimal(customer.c_credit_lim));
+					custPrepStmt.setBigDecimal(idx++, new java.math.BigDecimal(customer.c_balance));
 					custPrepStmt.setDouble(idx++, customer.c_ytd_payment);
 					custPrepStmt.setLong(idx++, customer.c_payment_cnt);
 					custPrepStmt.setLong(idx++, customer.c_delivery_cnt);
@@ -514,7 +514,7 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 					histPrepStmt.setInt(idx++, history.h_d_id);
 					histPrepStmt.setInt(idx++, history.h_w_id);
 					histPrepStmt.setTimestamp(idx++, history.h_date);
-					histPrepStmt.setDouble(idx++, history.h_amount);
+					histPrepStmt.setBigDecimal(idx++, new java.math.BigDecimal(history.h_amount));
 					histPrepStmt.setString(idx++, history.h_data);
 					histPrepStmt.addBatch();
 
@@ -605,8 +605,8 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 		            } else {
 		                ordrPrepStmt.setNull(idx++, Types.INTEGER);
 		            }
-		            ordrPrepStmt.setInt(idx++, oorder.o_ol_cnt);
-		            ordrPrepStmt.setInt(idx++, oorder.o_all_local);
+		            ordrPrepStmt.setBigDecimal(idx++, new java.math.BigDecimal(oorder.o_ol_cnt));
+		            ordrPrepStmt.setBigDecimal(idx++, new java.math.BigDecimal(oorder.o_all_local));
 		            ordrPrepStmt.setTimestamp(idx++, oorder.o_entry_d);
 		            ordrPrepStmt.addBatch();
 
@@ -658,9 +658,9 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 			            } else {
 			                orlnPrepStmt.setNull(idx++, 0);
 			            }
-			            orlnPrepStmt.setDouble(idx++, order_line.ol_amount);
+			            orlnPrepStmt.setBigDecimal(idx++, new java.math.BigDecimal(order_line.ol_amount));
 			            orlnPrepStmt.setLong(idx++, order_line.ol_supply_w_id);
-			            orlnPrepStmt.setDouble(idx++, order_line.ol_quantity);
+			            orlnPrepStmt.setBigDecimal(idx++, new java.math.BigDecimal(order_line.ol_quantity));
 			            orlnPrepStmt.setString(idx++, order_line.ol_dist_info);
 			            orlnPrepStmt.addBatch();
 
@@ -671,7 +671,7 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 							    newOrderBatch = 0;
 							}
 							orlnPrepStmt.executeBatch();
-							
+
 							ordrPrepStmt.clearBatch();
 							nworPrepStmt.clearBatch();
 							orlnPrepStmt.clearBatch();
